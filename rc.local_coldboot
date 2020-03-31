@@ -1,0 +1,92 @@
+#!/bin/bash
+#before start this test, delete coldboot_count.txt and coldboot_test.txt
+LOOPS=20
+BOARD_NUMBERS=4
+WORKING_DIR="/root/test"
+ATITOOL_PATH="/root/tools/atitool"
+LOG=$WORKING_DIR"/coldboot_test.txt"
+FLAG=100
+
+if [ ! -d root/test ]; then
+    mkdir -p /root/test
+fi
+
+#Test preparing
+if [ ! -e $WORKING_DIR/coldboot_count.txt ]; then
+    touch $WORKING_DIR/coldboot_count.txt
+    touch $LOG
+fi
+
+
+check_board_number()
+{
+    ${ATITOOL_PATH}/atitool -i |grep -i 0x738 |tee -a $LOG
+    boards=`$ATITOOL_PATH/atitool -i |grep -i 0x738 |wc -l`
+    if [ $boards -eq $BOARD_NUMBERS ]; then
+        echo "Boards number check passed" |tee -a $LOG
+    else
+        echo "Boards number check failed" |tee -a $LOG
+        FLAG=1
+    fi
+}
+
+check_rocm_loading()
+{
+    boards=`/opt/rocm/bin/rocminfo |grep "amdhsa--gfx908" |wc -l`
+    if [ $boards -eq $BOARD_NUMBERS ]; then
+        echo "Rocm loaded successfully" |tee -a $LOG
+    else
+        echo "Rocm loading failed" |tee -a $LOG
+		FLAG=1
+    fi
+}
+
+check_nodes_in_hive()
+{
+    dmesg |grep -i hive |tee -a $LOG
+    nodes=`dmesg |grep -i hive |wc -l`
+    if [ $nodes -eq $BOARD_NUMBERS ]; then
+        echo "All 4 nodes are in hive" |tee -a $LOG
+    else
+        echo "Some node(s) miss in hive" |tee -a $LOG
+        FLAG=1
+    fi
+}
+
+#RCCL TEST
+rccl_test()
+{
+    /root/test/rccl-tests/build/all_reduce_perf -b 128M -e 2048M -f 2 -g 4 |tee -a $LOG
+    if [ $? -eq 0 ]; then
+        echo "RCCL return code check passed" |tee -a $LOG
+    else
+        echo "RCCL return code check failed" |tee -a $LOG
+	    FLAG=1
+    fi	
+}
+
+current_count=`cat $WORKING_DIR/coldboot_count.txt |wc -l`
+echo $current_count
+if [ $current_count -lt $LOOPS ]; then
+    echo `date` test cycle $current_count |tee -a $WORKING_DIR/coldboot_count.txt
+    #Check point#1: if any boards miss
+    check_board_number
+
+    #Check point#2: if ROCm loaded successfully
+    check_rocm_loading
+
+    #check point#3: RCCL test	
+    rccl_test
+    if [ $FLAG -eq 1 ]; then
+        ###error occurred
+		echo "error detected, stop test!"
+		sleep 1
+		killall rc.local
+	else
+	    sleep 1
+        ipmitool power cycle
+    fi
+else
+    echo Test cycles reach to $LOOPS, Exit...
+fi
+
