@@ -192,6 +192,7 @@ FILTER[arcturus]=\
 "KFDExceptionTest.FaultStorm:"\
 "KFDQMTest.BasicCuMaskingEven:"\
 "KFDEvictTest.BurstyTest:"\
+"KFDMemoryTest.PtraceAccessInvisibleVram:"\
 "KFDMemoryTest.BigSysBufferStressTest:"\
 "KFDMemoryTest.LargestSysBufferTest"
 
