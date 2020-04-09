@@ -1,7 +1,7 @@
 #!/bin/bash
 # test loops
 # 1 GPU 1 cycles 4 seconds
-LOOPS=5
+LOOPS=20
 
 # define and create log path
 project_path=$(cd `dirname $0`; pwd)
