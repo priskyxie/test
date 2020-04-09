@@ -1,6 +1,4 @@
 #!/bin/bash
-# test loops
-LOOPS=22
 
 # define and create log path
 project_path=$(cd `dirname $0`; pwd)
@@ -68,7 +66,7 @@ trap 'onCtrlC' INT
 function onCtrlC () {
     echo 'Ctrl+C is captured, stop record logs'
 	killall get_sdr.sh
-	killall record_logs.sh
+	#killall record_logs.sh
 }
 sleep 5
 done
