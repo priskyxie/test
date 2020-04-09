@@ -1,6 +1,6 @@
 #!/bin/bash
 # test loops
-LOOPS=22
+LOOPS=20
 
 # define and create log path
 project_path=$(cd `dirname $0`; pwd)
